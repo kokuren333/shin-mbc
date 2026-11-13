@@ -25,6 +25,11 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {
          "files": {"type": "array", "items": {"type": "string"}},
          "self_id": {"type": "string"}}, "required": ["files"]}},
+    {"name": "mbc_report",
+     "description": "Plain-language report card (state audit in everyday words: type label, 5-step grades, good points, concerns). NOT a diagnosis. Args: files, self_id (optional).",
+     "inputSchema": {"type": "object", "properties": {
+         "files": {"type": "array", "items": {"type": "string"}},
+         "self_id": {"type": "string"}}, "required": ["files"]}},
     {"name": "mbc_chart",
      "description": "Render a temperature-chart style PNG of the heuristic condition series. Args: files, out_png, self_id (optional).",
      "inputSchema": {"type": "object", "properties": {
@@ -44,6 +49,14 @@ def _call(name, args):
                 "Everything is a relative self-observation signal against one's own baseline. "
                 "It is not Measurement-Based Care in the clinical sense, not a validated scale "
                 "(it is not PHQ-9/GAD-7/etc.), and not a diagnosis.")
+    if name == "mbc_report":
+        from .loaders import load_jsonl
+        from .scoring import daily_series
+        from .report import build_report
+        msgs = []
+        for f in args["files"]: msgs.extend(load_jsonl(f, self_id=args.get("self_id")))
+        msgs.sort(key=lambda x: x[0])
+        return build_report(daily_series(msgs))
     if name in ("mbc_analyze", "mbc_chart"):
         from .loaders import load_jsonl
         from .scoring import daily_series
