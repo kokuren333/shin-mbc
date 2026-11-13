@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shin-mbc"
+version = "0.1.0"
+description = "Heuristic self-observation from your own SNS text exports. NOT a medical tool."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+dependencies = ["matplotlib>=3.6"]
+
+[project.optional-dependencies]
+nlp = ["transformers>=4.40", "torch", "fugashi", "unidic-lite"]
+
+[project.scripts]
+shin-mbc = "shin_mbc.cli:main"
+shin-mbc-mcp = "shin_mbc.mcp_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
