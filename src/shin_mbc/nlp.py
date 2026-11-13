@@ -8,7 +8,7 @@ Two pluggable backends, both *optional* (install with `pip install .[nlp]`):
    -> per-post P(positive) / P(negative) / P(neutral)
 2. Emotion (WRIME fine-tuned Japanese BERT, Plutchik 8 emotions x
    writer/reader): patrickramos/bert-base-japanese-v2-wrime-fine-tune
-   -> per-post writer_* emotion intensities (sigmoid of logits).
+   -> per-post writer_* emotion intensities (regression, WRIME 0-3 scale).
    writer_sadness / writer_fear / writer_anger loosely correspond to
    the lexicon domains depress / anxiety / irritability.
 
@@ -45,7 +45,10 @@ def sentiment_scores(texts, model=SENTIMENT_MODEL, batch_size=32):
 
 def emotion_scores(texts, model=EMOTION_MODEL, batch_size=32):
     """Returns list of dicts of writer_* emotion intensities in [0,1] (sigmoid)."""
-    import math
+    # This model is a REGRESSION fine-tune: outputs are raw emotion
+    # intensities on the WRIME 0-3 scale (may slightly exceed it).
+    # top_k=None pipelines return scores that are the raw logits here,
+    # which for this checkpoint equal the regressed intensities.
     clf = _pipeline(model)
     out = []
     for i in range(0, len(texts), batch_size):
@@ -55,7 +58,7 @@ def emotion_scores(texts, model=EMOTION_MODEL, batch_size=32):
             for r in res:
                 lab = r["label"]
                 if lab.startswith("writer_"):
-                    d[lab[len("writer_"):]] = 1.0/(1.0+math.exp(-float(r["score"]))) if abs(float(r["score"])) > 1.0 else float(r["score"])
+                    d[lab[len("writer_"):]] = max(0.0, min(3.0, float(r["score"])))
             out.append(d)
     return out
 
